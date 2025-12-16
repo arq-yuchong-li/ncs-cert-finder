@@ -9,8 +9,13 @@ The solution is designed to be **auditable, explainable, and stable**, avoiding 
 ## Features
 
 - Recursively scans all CV PDFs in a directory
-- Reliable text extraction from PDFs (handles content originally stored in Word textboxes)
+- Reliable full-text extraction from PDFs (including content originally stored in Word textboxes)
 - Case-insensitive, exact certification name matching
+- Multi-vendor certification support:
+  - Microsoft
+  - AWS
+  - Google Cloud
+  - Databricks
 - Deduplicated output (one row per employee per certification)
 - Excel output with:
   - `employeeName`
@@ -19,7 +24,8 @@ The solution is designed to be **auditable, explainable, and stable**, avoiding 
   - `vendor`
 - Console summary report:
   - Total CVs scanned
-  - Total matches
+  - Total matched rows
+  - Unique employees matched
   - Matches per certification
 
 ---
@@ -29,9 +35,9 @@ The solution is designed to be **auditable, explainable, and stable**, avoiding 
 - Python 3.9+
 - pip
 
-Python dependencies:
+Install dependencies using the provided `requirements.txt`:
 ```bash
-pip install pdfplumber pandas
+pip install -r requirements.txt
 ````
 
 ---
@@ -42,6 +48,7 @@ pip install pdfplumber pandas
 CVs/
 ├── pdfs/        # All CV PDFs (input)
 ├── simple-scan.py    # Main scanner script
+├── requirements.txt    # Python dependencies
 └── cert_name_matches.xlsx  # Output
 ```
 
@@ -53,14 +60,14 @@ CVs/
 2. Update `ROOT` in the script if needed:
 
    ```python
-   ROOT = Path("/Users/yourname/Downloads/CVs/pdfs")
+   ROOT = Path("/Users/your_path/pdfs")
    ```
 3. Run:
 
    ```bash
-   python script.py
+   python simple-scan.py
    ```
-4. Review the generated `cert_name_matches.xlsx`
+4. Review the generated `ai_cert_employee.xlsx`
 
 ---
 
@@ -93,8 +100,8 @@ This converts **all DOCX files recursively** into PDFs and saves them in the `pd
 
 * Case-insensitive exact substring matching
 * No fuzzy matching or inference
-* Certification IDs are derived from a controlled metadata map
-* Vendor is fixed as **Microsoft Azure** in this script, change if needed
+* Certification IDs and vendors are sourced from a controlled catalog
+* Vendor is dynamically populated per certification
 
 This ensures results are predictable and suitable for audit or compliance reporting.
 
@@ -110,6 +117,6 @@ This ensures results are predictable and suitable for audit or compliance report
 ---
 
 ## Notes
-
+* If an employee has duplicated CVs stored under different file naming conventions, the tool will treat them as separate inputs and count them multiple times
 * This tool intentionally avoids GenAI/LLMs for reliability and explainability
 * PDF-first processing is used to ensure maximum text coverage
