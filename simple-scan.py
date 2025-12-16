@@ -2,37 +2,67 @@
 from __future__ import annotations
 
 import re
-import zipfile
 from pathlib import Path
-from typing import List, Dict, Set
+from typing import Set
 import pdfplumber
-from pathlib import Path
-
 import pandas as pd
 from collections import Counter
 
-ROOT = Path("/Users/yuchong.li/Downloads/CVs/pdfs")  # change as needed
+ROOT = Path("/Users/Your_path/pdfs")  # change as needed
 OUTPUT_XLSX = Path("ai_cert_employee.xlsx")
 
 # Put EXACT certification names here (as they appear in CVs)
-CERT_METADATA = {
-    "Azure AI Fundamentals": "AI-900",
-    "Azure AI Engineer Associate": "AI-102",
-    "Azure Data Scientist Associate": "DP-100",
-    "Designing Microsoft Azure Infrastructure Solutions": "AZ-305",
-    "Power Platform Fundamentals": "PL-900",
-    "Power Platform Developer Associate": "PL-400",
-    "Implementing Analytics Solutions Using Microsoft Fabric": "DP-600",
-    "Power Platform Solution Architect Expert": "PL-600",
-    "Designing and Implementing Microsoft DevOps Solutions": "AZ-400",
-    "Designing and Implementing Enterprise-Scale Analytics Solutions": "DP-500",
-    "Microsoft Identity and Access Administrator": "SC-300",
-    "Microsoft Cybersecurity Architect": "SC-100",
-    "Agentic AI Business Solutions Architect": "AB-100",
-    "AI Transformation Leader": "AB-731",
-    "Responsible AI": "",
+CERT_CATALOG = {
+    # Azure
+    "Azure AI Fundamentals": {"id": "AI-900", "vendor": "Microsoft"},
+    "Azure AI Engineer Associate": {"id": "AI-102", "vendor": "Microsoft"},
+    "Azure Data Scientist Associate": {"id": "DP-100", "vendor": "Microsoft"},
+    "Designing Microsoft Azure Infrastructure Solutions": {"id": "AZ-305", "vendor": "Microsoft"},
+    "Power Platform Fundamentals": {"id": "PL-900", "vendor": "Microsoft"},
+    "Power Platform Developer Associate": {"id": "PL-400", "vendor": "Microsoft"},
+    "Implementing Analytics Solutions Using Microsoft Fabric": {"id": "DP-600", "vendor": "Microsoft"},
+    "Power Platform Solution Architect Expert": {"id": "PL-600", "vendor": "Microsoft"},
+    "Designing and Implementing Microsoft DevOps Solutions": {"id": "AZ-400", "vendor": "Microsoft"},
+    "Designing and Implementing Enterprise-Scale Analytics Solutions": {"id": "DP-500", "vendor": "Microsoft"},
+    "Microsoft Identity and Access Administrator": {"id": "SC-300", "vendor": "Microsoft"},
+    "Microsoft Cybersecurity Architect": {"id": "SC-100", "vendor": "Microsoft"},
+    "Agentic AI Business Solutions Architect (beta)": {"id": "AB-100", "vendor": "Microsoft"},
+    "AI Transformation Leader": {"id": "B-731", "vendor": "Microsoft"},
+    "Responsible AI": {"id": "", "vendor": "mentioned in CV, not a cert"},
+
+    # AWS
+    "AWS Certified Cloud Practitioner": {"id": "CLF-C02", "vendor": "AWS"},
+    "AWS Certified Developer - Associate": {"id": "DVA-C02", "vendor": "AWS"},
+    "AWS Certified Machine Learning - Specialty": {"id": "MLS-C01", "vendor": "AWS"},
+    "AWS Certified Data Engineer - Associate": {"id": "DEA-C01", "vendor": "AWS"},
+    "AWS Certified Solutions Architect - Associate": {"id": "SAA-C03", "vendor": "AWS"},
+    "AWS Certified Solutions Architect - Professional": {"id": "SAP-C02", "vendor": "AWS"},
+    "AWS Certified DevOps Engineer - Professional": {"id": "DOP-C02", "vendor": "AWS"},
+    "AWS Certified Database - Specialty": {"id": "DBS-C01", "vendor": "AWS"},
+    "AWS Certified Security - Specialty": {"id": "SCS-C03", "vendor": "AWS"},
+    "AWS Certified Advanced Networking - Specialty": {"id": "ANS-C01", "vendor": "AWS"},
+
+    #GCP
+    "Cloud Digital Leader": {"id": "CDL", "vendor": "Google Cloud"},
+    "Associate Cloud Engineer": {"id": "ACE", "vendor": "Google Cloud"},
+    "Professional Cloud Architect": {"id": "PCA", "vendor": "Google Cloud"},
+    "Professional Data Engineer": {"id": "PDE", "vendor": "Google Cloud"},
+    "Professional Cloud DevOps Engineer": {"id": "PCDOE", "vendor": "Google Cloud"},
+    "Professional Cloud Developer": {"id": "PCD", "vendor": "Google Cloud"},
+    "Professional Cloud Network Engineer": {"id": "PCNE", "vendor": "Google Cloud"},
+    "Professional Cloud Security Engineer": {"id": "PCSE", "vendor": "Google Cloud"},
+    "Professional Cloud Database Engineer": {"id": "PCDBE", "vendor": "Google Cloud"},
+    "Professional Machine Learning Engineer": {"id": "PMLE", "vendor": "Google Cloud"},
+    "Google Cloud Certified Fellow": {"id": "GCCF", "vendor": "Google Cloud"},
+
+    #Databricks
+    "Generative AI Fundamentals": {"id": "-", "vendor": "Databricks"},
+    "Generative AI Engineering Associate": {"id": "-", "vendor": "Databricks"},
+    "Machine Learning Associate": {"id": "-", "vendor": "Databricks"},
+    "Machine Learning Professional": {"id": "-", "vendor": "Databricks"},
 }
-CERT_NAMES = list(CERT_METADATA.keys())
+
+CERT_NAMES = list(CERT_CATALOG.keys())
 
 def normalize_text(s: str) -> str:
     # remove common bullet / NBSP weirdness
@@ -84,21 +114,22 @@ def main() -> None:
             text = normalize_text(extract_pdf_text(pdf_path)).lower()
             text = text.replace("\n", " ")
         except Exception:
-            if "Ian Qin" in pdf_path.as_posix():
-                print("[DEBUG] Failed reading Ian Qin PDF:", e)
+            '''if "Ian Qin" in pdf_path.as_posix():
+                print("[DEBUG] Failed reading Ian Qin PDF:", e)'''
             continue
         
-        if "Ian Qin" in pdf_path.as_posix():
+        '''if "Ian Qin" in pdf_path.as_posix():
             print("[DEBUG] Ian Qin text length:", len(text))
             idx = text.find("cert")
-            print("[DEBUG] Ian Qin snippet:", text[idx:idx+500] if idx != -1 else text[:500])
+            print("[DEBUG] Ian Qin snippet:", text[idx:idx+500] if idx != -1 else text[:500])'''
 
         employee = employee_name_from_pdf(pdf_path)
 
         for cert_name, cert_norm in cert_lower.items():
             if cert_norm in text:
-                cert_id = CERT_METADATA.get(cert_name, "")
-                vendor = "Microsoft"
+                meta = CERT_CATALOG[cert_name]
+                cert_id = meta["id"]
+                vendor = meta["vendor"]
 
                 key = (employee, cert_name, cert_id, vendor)
                 if key not in matches:
